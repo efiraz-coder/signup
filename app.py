@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, send_file, jsonify
 from pdf2image import convert_from_path
 from PIL import Image
 import base64
@@ -54,4 +54,5 @@ def get_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 if __name__ == '__main__':
+
     app.run(debug=True)
