@@ -1,0 +1,18 @@
+# השתמש בגרסת פייתון קלה
+FROM python:3.11-slim
+
+# התקנת רכיבי המערכת של Poppler
+RUN apt-get update && apt-get install -y poppler-utils && rm -rf /var/lib/apt/lists/*
+
+# הגדרת תיקיית העבודה
+WORKDIR /app
+
+# העתקת דרישות והתקנה
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# העתקת שאר קבצי הפרויקט
+COPY . .
+
+# הרצת השרת (שימוש ב-Gunicorn לביצועים טובים יותר בשרת)
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]

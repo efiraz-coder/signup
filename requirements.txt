@@ -1,0 +1,7 @@
+flask
+pypdf
+reportlab
+Pillow
+gunicorn
+opencv-python
+pdf2image
