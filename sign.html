@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>מערכת אישור וחתימה</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f4f7f6; text-align: center; }
+        .container { margin: 20px auto; max-width: 900px; background: #fff; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; }
+        
+        #pdf-wrapper { position: relative; display: inline-block; border: 1px solid #ccc; overflow: hidden; }
+        #pdf_img { width: 800px; display: block; }
+        
+        #draggable-sig { 
+            position: absolute; cursor: move; display: none; 
+            border: 2px dashed #3498db; background: rgba(255,255,255,0.7); z-index: 10;
+        }
+        
+        #pad { border: 2px solid #bdc3c7; background-color: #fff; touch-action: none; cursor: crosshair; }
+        button { background: #2c3e50; color: #fff; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>אישור ומיקום חתימה</h2>
+        <div id="pdf-wrapper">
+            <img id="pdf_img" src="/page.png" draggable="false">
+            <img id="draggable-sig" width="180" draggable="false">
+        </div>
+        <div>
+            <h3>צייר את חתימתך:</h3>
+            <canvas id="pad" width="400" height="200"></canvas>
+            <br>
+            <button onclick="pad.clear()">נקה משטח</button>
+            <button onclick="applySignatureToDoc()" style="background:#2980b9;">1. הצג חתימה על הדף</button>
+            <button onclick="saveFinalDocument()" style="background:#27ae60;">2. שמור וסיים</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    <script>
+        const pad = new SignaturePad(document.getElementById('pad'));
+        const sigImg = document.getElementById('draggable-sig');
+        const wrapper = document.getElementById('pdf-wrapper');
+        let currentX = 50, currentY = 50, isDragging = false;
+
+        function applySignatureToDoc() {
+            if (pad.isEmpty()) return alert("נא לחתום!");
+            sigImg.src = pad.toDataURL();
+            sigImg.style.display = 'block';
+            sigImg.style.left = currentX + 'px';
+            sigImg.style.top = currentY + 'px';
+        }
+
+        // מנגנון גרירה
+        sigImg.onmousedown = (e) => { isDragging = true; };
+        document.onmousemove = (e) => {
+            if (!isDragging) return;
+            const rect = wrapper.getBoundingClientRect();
+            currentX = e.clientX - rect.left - (sigImg.offsetWidth/2);
+            currentY = e.clientY - rect.top - (sigImg.offsetHeight/2);
+            sigImg.style.left = currentX + 'px';
+            sigImg.style.top = currentY + 'px';
+        };
+        document.onmouseup = () => { isDragging = false; };
+
+        async function saveFinalDocument() {
+            const mainImg = document.getElementById('pdf_img');
+            const scaleX = mainImg.naturalWidth / mainImg.width;
+            const scaleY = mainImg.naturalHeight / mainImg.height;
+            const res = await fetch('/save', {
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ sig: sigImg.src, x: currentX * scaleX, y: currentY * scaleY })
+            });
+            if(res.ok) window.location.href = '/signed.pdf';
+        }
+    </script>
+</body>
+</html>
